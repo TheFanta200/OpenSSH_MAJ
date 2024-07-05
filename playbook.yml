@@ -1,0 +1,10 @@
+---
+- hosts: Client
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ./global_vars/Linux.yml
+  roles:
+    - { name: Update_SSH, tags: Update_SSH }
+#    - { name: gath, tags: gath }
+

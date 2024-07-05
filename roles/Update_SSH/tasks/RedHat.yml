@@ -1,0 +1,32 @@
+- name: Ensure build dependencies are installed
+  dnf:
+    name:
+      - "@Development Tools"
+      - openssl-devel
+      - zlib-devel
+    state: present
+
+- name: Download OpenSSH source tarball
+  get_url:
+    url: "{{ openssh_url }}"
+    dest: "{{ openssh_tar }}"
+
+- name: Extract OpenSSH source tarball
+  ansible.builtin.unarchive:
+    src: "{{ openssh_tar }}"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Compile and install OpenSSH
+  shell: |
+    cd {{ openssh_src_dir }}
+    ./configure
+    make
+    make install
+  args:
+    creates: "/usr/local/bin/ssh"
+
+- name: Restart SSH service
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted

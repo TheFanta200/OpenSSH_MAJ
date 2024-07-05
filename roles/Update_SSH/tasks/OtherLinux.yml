@@ -1,0 +1,5 @@
+---
+# tasks file for roles/gath
+- name: Print OtherLinux
+  debug:
+    msg: "OS is Not Debian or Ubuntu or RedHat"

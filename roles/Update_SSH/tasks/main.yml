@@ -1,0 +1,43 @@
+- name: Print os_family fact
+  debug:
+    msg: "The OS family is: {{ ansible_facts['os_family'] }}"
+  # Affiche la famille du système d'exploitation
+
+- name: Check SSH version
+  shell: ssh -V 2>&1 | grep -o 'OpenSSH[^ ]*'
+  register: ssh_version
+  when: ansible_facts['os_family'] in ["Debian", "RedHat", "OtherLinux"] or
+        (ansible_facts['os_family'] == "Debian" and not (ansible_lsb.codename == "noble" and ansible_lsb.release == "24.04"))
+  # Vérifie la version de SSH pour les systèmes basés sur Debian, RedHat, OtherLinux
+  # Exclut spécifiquement Ubuntu 24.04 LTS
+  # Enregistre le résultat dans ssh_version
+
+- name: Extract SSH major version
+  set_fact:
+    ssh_major_version: "{{ ssh_version.stdout.split('_')[1] | regex_replace('(\\d+\\.\\d+p\\d+).*', '\\1') }}"
+  when: ssh_version is defined and ssh_version.stdout is defined
+  # Extrait la version principale de SSH et la stocke dans ssh_major_version si ssh_version et ssh_version.stdout sont définies
+
+- name: Check if SSH version is within the allowed range
+  set_fact:
+    ssh_version_check: "{{ (ssh_major_version.split('p')[0] | float >= min_ssh_version and ssh_major_version.split('p')[0] | float <= max_ssh_version) }}"
+  when: ssh_version is defined and ssh_version.stdout is defined
+  # Vérifie si la version de SSH est dans la plage 
+  # Stocke le résultat (vrai ou faux) dans ssh_version_check
+
+- name: Fail if SSH version is not within the allowed range
+  fail:
+    msg: "SSH version {{ ssh_version.stdout }} on {{ ansible_hostname }} ({{ ansible_host }}) is not within the allowed range ({{ min_ssh_version }} and {{ max_ssh_version }})."
+  when: ssh_version_check is defined and not ssh_version_check
+  # Affiche si la version de SSH n'est pas dans la plage
+
+- name: Debug message for successful SSH version check
+  debug:
+    msg: "SSH version {{ ssh_version.stdout }} on {{ ansible_hostname }} ({{ ansible_host }}) is within the allowed range ({{ min_ssh_version }} to {{ max_ssh_version }})."
+  when: ssh_version_check is defined and ssh_version_check
+  # Affiche un message de réussite si la version de SSH est dans la plage autorisée
+
+- name: Execute OS specific task if SSH version is within the allowed range
+  include_tasks: "{{ ansible_facts['os_family'] }}.yml"
+  when: ssh_version_check is defined and ssh_version_check and not (ansible_facts['os_family'] == "Debian" and ansible_lsb.codename == "noble" and ansible_lsb.release == "24.04")
+  # Exécute les tâches spécifiques à l'OS si la version de SSH est dans la plage autorisée

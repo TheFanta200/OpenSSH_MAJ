@@ -1,0 +1,44 @@
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install required packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - build-essential
+    - zlib1g-dev
+    - libssl-dev
+    - libpam0g-dev
+
+- name: Download OpenSSH source
+  get_url:
+    url: "{{ openssh_url }}"
+    dest: "{{ openssh_tar }}"
+
+- name: Extract OpenSSH source
+  ansible.builtin.unarchive:
+    src: "{{ openssh_tar }}"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Configure OpenSSH
+  ansible.builtin.command:
+    cmd: "./configure --prefix=/usr --sysconfdir=/etc/ssh --with-md5-passwords --with-pam"
+    chdir: "{{ openssh_src_dir }}"
+
+- name: Make OpenSSH
+  ansible.builtin.command:
+    cmd: "make"
+    chdir: "{{ openssh_src_dir }}"
+
+- name: Install OpenSSH
+  ansible.builtin.command:
+    cmd: "sudo make install"
+    chdir: "{{ openssh_src_dir }}"
+
+- name: Restart SSH service
+  ansible.builtin.systemd:
+    name: ssh
+    state: restarted
