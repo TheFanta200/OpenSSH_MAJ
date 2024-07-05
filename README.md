@@ -17,7 +17,7 @@ Pour exécuter cette procédure, le compte utilisé doit être `root` ou avoir d
 3. Créer un fichier vault pour sécuriser tous les comptes utilisés :
 
    ```sh
-   ansible-vault create global_vars/esxi_vault.yml
+   ansible-vault create global_vars/Linux.yml
    ```
 
 4. Saisie et modification des informations suivantes dans le fichier vault :
